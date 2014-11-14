@@ -44,10 +44,10 @@ except(AttributeError):
     socket.SO_REUSEPORT = 15
 
 
-class Chartdartd(object):
+class Chartd(object):
     """Class Docstring"""
 
-    def __init__(self, defaultAddress, useRedis=False, redisAddress='localhost'):
+    def __init__(self, defaultAddress='127.0.0.1', useRedis=False, redisAddress='localhost'):
         self.defaultAddress = defaultAddress
         self.useRedis       = useRedis
         self.redisAddress   = redisAddress
@@ -77,7 +77,7 @@ class Chartdartd(object):
     def loadZoneFile(self, zoneFile):
         """Load a JSON zone file in to memory"""
 
-        packtd.debug('Attempting to load zone file {0}'.format(zoneFile))
+        packtdLogger.debug('Attempting to load zone file {0}'.format(zoneFile))
         if self.useRedis:
             # Read a zone file in to Redis DB
             pass
@@ -98,19 +98,13 @@ class Chartdartd(object):
 
             return self.zoneRecords
 
-    @staticmethod
-    def updateRedisZoneFile():
-        pass
-
     def remoteResolve(self, domain):
         """Attempt to resolve a domain using socket.gethostname()"""
 
         try:
             IPAddress = socket.gethostbyname(domain)
-            packtdLogger.info('Translated {0} <-> [{1}]'.format(domain, IPAddress))
-            if self.useRedis:
-                pass
-            else:
+            packtdLogger.info('Translated: {0} <-> [{1}]'.format(domain, IPAddress))
+            if not self.useRedis:
                 self.zoneRecords[domain] = IPAddress
         except(socket.gaierror):
             IPAddress = self.defaultAddress
@@ -122,10 +116,12 @@ class Chartdartd(object):
 
         if domain[-1] != '.':
             domain = domain + '.'
+        packtdLogger.debug("Attempting to resolve domain {0} locally".format(doamin))
 
         if useRedis:
             try:
                 pass
+                # Need to revisit with more Redis and python driver knowledge
                 #redisServer = redis.Redis(self.redisAddress)
                 #ARecord = redisServer.hget('chartd.domains', domain)
                 #redisServer.close()
@@ -134,8 +130,10 @@ class Chartdartd(object):
                 ARecord = self.defaultAddress
 
             if ARecord is not None:
+                packtdLogger.info('Translated: {0} <-> [{1}]'.format(domain, ARecord))
                 return ARecord
             else:
+                packtdLogger.warning('Entry for domain {0} not found in database'.format(domain))
                 return self.defaultAddress
 
         else:
@@ -143,11 +141,13 @@ class Chartdartd(object):
                 packtdLogger.info('Host {0} found in local cache'.format())
                 return self.zoneRecords[domain]
             else:
+                packtdLogger.warning('Entry for domain {0} not found in cache'.format(domain))
                 return defaultAddress
 
-    def mainloop(self):
-        """Docstring"""
+    def mainloop(self):  # I barely even remember writting this so odds are it probably wont work lol
+        """Start chart.d daemon and bind to port"""
 
+        packtdLogger.info('Starting chart.d under PID: {0}'.format(os.getpid()))  # Idk if I like this message format either
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as UDPSocket:
             try:
                 UDPSocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
@@ -160,10 +160,11 @@ class Chartdartd(object):
                 data, sourceAddress = UDPSocket.recvfrom(1024)
                 packet = DNSQuery(data)
                 IPAddress = localResolve(packet.domain)
+                # If our localResolve failed and fell back to our default address
                 if self.configuration['FORWARD_NOMATCH'] and IPAddress == self.defaultAddress:
                     IPAddress = remoteResolve(packet.domain)
                 UDPSocket.sendto(packet.buildReply(IPAddress), sourceAddress)
-                packtdLogger.info('DNS reply sent to [{0}]: {1} <-> {2}'.format(sourceAddress[0], packet.domain, IPAddress))
+                packtdLogger.info('DNS reply sent to {0}: {1}[{2}]'.format(sourceAddress[0], packet.domain, IPAddress))  # Idk if I like this message format
 
 
 class DNSQuery(object):
@@ -186,12 +187,12 @@ class DNSQuery(object):
 
         packet = ''
         if ip == '':
-            packet += self.data[:2] + "\x81\x83"
+            packet += self.data[:2] + "\x81\x83"  # The double quotes...
             packet += self.data[4:6] + '\x00\x00' + '\x00\x00\x00\x00'
             packet += self.data[12:]
 
         if self.domain and packet == '':
-            packet += self.data[:2] + "\x81\x80"
+            packet += self.data[:2] + "\x81\x80"  # The horror...
             packet += self.data[4:6] + self.data[4:6] + '\x00\x00\x00\x00'
             packet += self.data[12:]
             packet += '\xc0\x0c'
@@ -212,7 +213,7 @@ def main():
 
     print('Sweet Jesus what in god\'s name are you doin son?!')
     sys.exit(127)  # Because there's no sys.kernelpanic() method :(
-
+    # Note to self, write a sys.kernelpanic method. You're welcome Guido...
 
 if __name__ == '__main__':
     try:
