@@ -36,6 +36,7 @@ import os.path
 import logging
 import argparse
 
+# I still haven't fixed this? Jesus fuck man.... 
 packtdLogger = logging.getLogger('Pequod.chartd')  # Rename to chartdLogger Lol :P
 packtdLogger.setLevel(logging.INFO)
 try:
@@ -45,7 +46,7 @@ except(AttributeError):
 
 
 class Chartd(object):
-    """Class Docstring"""
+    """Tiny host(A) record DNS server"""
 
     def __init__(self, defaultAddress='127.0.0.1', useRedis=False, redisAddress='localhost'):
         self.defaultAddress = defaultAddress
@@ -116,7 +117,7 @@ class Chartd(object):
 
         if domain[-1] != '.':
             domain = domain + '.'
-        packtdLogger.debug("Attempting to resolve domain {0} locally".format(doamin))
+        packtdLogger.debug("Attempting to resolve domain {0} locally".format(doamin))  # Why double quotes... why?!
 
         if useRedis:
             try:
@@ -168,8 +169,9 @@ class Chartd(object):
 
 
 class DNSQuery(object):
-    """Class Docstring"""
+    """A DNS Query packet"""
 
+    # I feel as though I should actually learn WTF is going on here...
     def __init__(self, data):
         self.data   = data
         self.domain = ''
@@ -183,7 +185,7 @@ class DNSQuery(object):
                 lon = ord(data[ini])
 
     def buildReply(self, ip):
-        """Docstring"""
+        """Build a DNS reply packet"""
 
         packet = ''
         if ip == '':
@@ -205,11 +207,11 @@ class DNSQuery(object):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--config', metavar='FILE', action='store', help='Specify the configuration file to use')
-    parser.add_argument('-d', '--default', metavar='IP', action='store', help='')
-    parser.add_argument('-l', '--list', metavar='HOSTFILE', action='store', help='')
-    parser.add_argument('-n', '--noredis', action='store_true', default=True, help='')
-    parser.add_argument('-r', '--resolve', action='store_true', default=False, help='')
-    args = parser.parse_args():
+    parser.add_argument('-z', '--zonefile', metavar='FILE', action='store', help='Specify the zone file to use')
+    parser.add_argument('-d', '--default', metavar='IP', action='store', help='Set a default IP address for when domain can\'t be resolved')
+    parser.add_argument('-n', '--noredis', action='store_true', default=True, help='Don\'t use Redis for zone file entries')
+    parser.add_argument('-r', '--resolve', action='store_true', default=False, help='Attempt to resolve domain name over network if not found in local cache')
+    args = parser.parse_args()
 
     print('Sweet Jesus what in god\'s name are you doin son?!')
     sys.exit(127)  # Because there's no sys.kernelpanic() method :(
