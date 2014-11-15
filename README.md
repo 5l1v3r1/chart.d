@@ -1,4 +1,4 @@
-#___Chart.d___
+#__Chart.d__
 --
 
 Chart.d - Tiny host(A) record DNS server designed for 802.11 phishing campaigns and acting as a malicious DNS server.
@@ -11,19 +11,19 @@ Stuff and things and junk you know. Btw python probably wasnt the best choice fo
 #__Usage__
 ---
 
-As a stand-alone service :
-* `python chartd.py`
-
-As python library:
-* `>>> import chartd`
-* `>>> named = chartd.Chartd()`
-* `>>> named.loadConfiguration()`
-* `>>> named.loadZoneFile()`
-* `>>> named.mainloop()`
+Chart.d is designed to be run either as a 
 
 ###__Examples:__
 
-* `A single well thought out, beautiful example usage.`
+    $ python chartd.py
+
+OR
+
+    >>> import chartd
+    >>> named = chartd.Chartd()
+    >>> named.loadConfiguration()
+    >>> named.loadZoneFile()
+    >>> named.mainloop()
 
 
 #__Errata & Credits__
@@ -31,17 +31,16 @@ As python library:
 
 #[Warning, this software is currently under heavy developement and probably wont work like you'd expect (if at all).]
 
-###__Things To Do:__
-* Actually Finish the README.
-* Finishing the program might not hurt either...
-* Pick up milk.
-* Fire the idiot who named the logger instance packtdLogger.
+###__TODO List:__
 
-* Implement a redirection functionality in order to better mimic open APs
-* Translate a DNS zone transfer in to a chart.d zonefile
-* Start experimenting and planning with more complete DNS implementation 
+* Add Doxygen or Sphinx style documentation.
+* Implement a redirection functionality in order to better mimic public APs.
+* Translate a DNS zone transfer in to a chart.d zonefile.
+* Start experimenting and planning with more complete DNS implementation.
+* Maybe IPv6 record support (AAAA).
 
 ###__Credits:__
+
 * Person1: Thanks for that thing.
 * Person2: You made that thing that does some stuff so thanks for that.
 * Animal1: Down with the compsci patriarcy!
