@@ -36,7 +36,7 @@ import os.path
 import logging
 import argparse
 
-# I still haven't fixed this? Jesus fuck man.... 
+# I still haven't fixed this? Jesus fuck man....
 packtdLogger = logging.getLogger('Pequod.chartd')  # Rename to chartdLogger Lol :P
 packtdLogger.setLevel(logging.INFO)
 try:
@@ -62,6 +62,7 @@ class Chartd(object):
         if not os.path.isfile(configration):
             packtdLogger.error('Could not find {0}: Does not exist'.format(configuration))
             raise IOError('Configuration file \'{0}\' not found'.format(configuration))
+
         with open(configuration, 'r') as config:
             configContent = config.read()
             try:
@@ -86,6 +87,7 @@ class Chartd(object):
             if not os.path.isfile(zoneFile):
                 packtdLogger.error('Could not find {0}: Doesnot exist'.format(zoneFile))
                 raise IOError('Zone file \'{0}\' not found'.format(zoneFile))
+
             with open(zoneFile, 'r') as f:
                 zoneContent = f.read()
                 try:
@@ -117,7 +119,7 @@ class Chartd(object):
 
         if domain[-1] != '.':
             domain = domain + '.'
-        packtdLogger.debug("Attempting to resolve domain {0} locally".format(doamin))  # Why double quotes... why?!
+        packtdLogger.debug('Attempting to resolve domain {0} locally'.format(doamin))
 
         if useRedis:
             try:
@@ -145,14 +147,14 @@ class Chartd(object):
                 packtdLogger.warning('Entry for domain {0} not found in cache'.format(domain))
                 return defaultAddress
 
-    def mainloop(self):  # I barely even remember writting this so odds are it probably wont work lol
+    def mainloop(self):
         """Start chart.d daemon and bind to port"""
 
-        packtdLogger.info('Starting chart.d under PID: {0}'.format(os.getpid()))  # Idk if I like this message format either
+        packtdLogger.info('Starting chart.d under PID: {0}'.format(os.getpid()))
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as UDPSocket:
             try:
                 UDPSocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
-            except(socket.error):
+            except(socket.error):  # Swallowing errors is fun :D
                 packtdLogger.error('SO_REUSEPORT not supported by this system')
             UDPSocket.bind(('', 53))
 
@@ -165,13 +167,12 @@ class Chartd(object):
                 if self.configuration['FORWARD_NOMATCH'] and IPAddress == self.defaultAddress:
                     IPAddress = remoteResolve(packet.domain)
                 UDPSocket.sendto(packet.buildReply(IPAddress), sourceAddress)
-                packtdLogger.info('DNS reply sent to {0}: {1}[{2}]'.format(sourceAddress[0], packet.domain, IPAddress))  # Idk if I like this message format
+                packtdLogger.info('DNS reply sent to {0}: {1}[{2}]'.format(sourceAddress[0], packet.domain, IPAddress)
 
 
 class DNSQuery(object):
     """A DNS Query packet"""
 
-    # I feel as though I should actually learn WTF is going on here...
     def __init__(self, data):
         self.data   = data
         self.domain = ''
@@ -189,12 +190,12 @@ class DNSQuery(object):
 
         packet = ''
         if ip == '':
-            packet += self.data[:2] + "\x81\x83"  # The double quotes...
+            packet += self.data[:2]  + '\x81\x83'
             packet += self.data[4:6] + '\x00\x00' + '\x00\x00\x00\x00'
             packet += self.data[12:]
 
         if self.domain and packet == '':
-            packet += self.data[:2] + "\x81\x80"  # The horror...
+            packet += self.data[:2]  + '\x81\x80'
             packet += self.data[4:6] + self.data[4:6] + '\x00\x00\x00\x00'
             packet += self.data[12:]
             packet += '\xc0\x0c'
