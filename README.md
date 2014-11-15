@@ -37,6 +37,10 @@ As python library:
 * Pick up milk.
 * Fire the idiot who named the logger instance packtdLogger.
 
+* Implement a redirection functionality in order to better mimic open APs
+* Translate a DNS zone transfer in to a chart.d zonefile
+* Start experimenting and planning with more complete DNS implementation 
+
 ###__Credits:__
 * Person1: Thanks for that thing.
 * Person2: You made that thing that does some stuff so thanks for that.
