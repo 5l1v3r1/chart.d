@@ -30,11 +30,18 @@ import re
 import os
 import sys
 import json
-import redis
+#import redis
 import socket
 import os.path
 import logging
 import argparse
+
+# I dont like the fact you require redis even if you don't use it :/
+try:
+    import redis
+except(ImportError):
+    sys.stderr.write('{0}: Dependencies are not met: Redis required for full functionality')
+    sys.exit(5)
 
 # I still haven't fixed this? Jesus fuck man....
 packtdLogger = logging.getLogger('Pequod.chartd')  # Rename to chartdLogger Lol :P
@@ -55,7 +62,7 @@ class Chartd(object):
         self.zoneRecords    = {}
         self.configuration  = {}
 
-    def loadConfiguration(self, configuration):
+    def loadConfiguration(self, configuration='conf/chartd.conf'):
         """Load a configuration file in to self.configuration"""
 
         packtdLogger.debug('Attempting to load configuration file {0}'.format(configuration))
@@ -76,7 +83,7 @@ class Chartd(object):
 
         return self.configuration
 
-    def loadZoneFile(self, zoneFile):
+    def loadZoneFile(self, zoneFile='conf/chartd.zone'):
         """Load a JSON zone file in to memory"""
 
         packtdLogger.debug('Attempting to load zone file {0}'.format(zoneFile))
@@ -214,9 +221,8 @@ def main():
     parser.add_argument('-r', '--resolve', action='store_true', default=False, help='Attempt to resolve domain name over network if not found in local cache')
     args = parser.parse_args()
 
-    print('Sweet Jesus what in god\'s name are you doin son?!')
-    sys.exit(127)  # Because there's no sys.kernelpanic() method :(
-    # Note to self, write a sys.kernelpanic method. You're welcome Guido...
+    print('Run me again I dare you, I double dare you muthafucka!')
+    sys.exit(127)
 
 if __name__ == '__main__':
     try:
