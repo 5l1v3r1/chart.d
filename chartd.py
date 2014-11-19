@@ -98,10 +98,10 @@ class Chartd(object):
                 except():
                     zoneRecords = {}
 
-            redisdb = redis.StrictRedis(host=self.redisAddress, port)
+            redisdb = redis.StrictRedis(host=self.redisAddress, port=self.redisPort, db=0)
             for key in zoneRecords.keys():
                 redisdb.set(key, zoneRecords[key])
-            
+
         else:
             with open(zoneFile, 'r') as f:
                 zoneContent = f.read()
