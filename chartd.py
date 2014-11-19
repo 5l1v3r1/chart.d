@@ -30,7 +30,6 @@ import re
 import os
 import sys
 import json
-#import redis
 import socket
 import os.path
 import logging
@@ -54,10 +53,11 @@ except(AttributeError):
 class Chartd(object):
     """Tiny host(A) record DNS server"""
 
-    def __init__(self, defaultAddress='127.0.0.1', useRedis=False, redisAddress='localhost'):
+    def __init__(self, defaultAddress='127.0.0.1', useRedis=False, redisAddress='localhost', redisPort=6379):
         self.defaultAddress = defaultAddress
         self.useRedis       = useRedis
         self.redisAddress   = redisAddress
+        self.redisPort      = redisPort
         self.zoneRecords    = {}
         self.configuration  = {}
 
@@ -85,14 +85,24 @@ class Chartd(object):
     def loadZoneFile(self, zoneFile='conf/chartd.zone'):
         """Load a JSON zone file in to memory"""
 
-        if self.useRedis:
-            # Read a zone file in to Redis DB
-            pass
-        else:
-            if not os.path.isfile(zoneFile):
-                packtdLogger.error('Could not find {0}: Doesnot exist'.format(zoneFile))
-                raise IOError('Zone file \'{0}\' not found'.format(zoneFile))
+        chartdLogger.debug('Attempting to load zone file {0}'.format(zoneFile))
+        if not os.path.isfile(zoneFile):
+            chartdLogger.error('Could not find {0}: Doesnot exist'.format(zoneFile))
+            raise IOError('Zone file \'{0}\' not found'.format(zoneFile))
 
+        if self.useRedis:
+            with open(zoneFile, 'r') as f:
+                try:
+                    zoneContent = f.read()
+                    zoneRecords = json.loads(zoneContent)
+                except():
+                    zoneRecords = {}
+
+            redisdb = redis.StrictRedis(host=self.redisAddress, port)
+            for key in zoneRecords.keys():
+                redisdb.set(key, zoneRecords[key])
+            
+        else:
             with open(zoneFile, 'r') as f:
                 zoneContent = f.read()
                 try:
