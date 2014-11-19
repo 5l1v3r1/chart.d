@@ -40,12 +40,11 @@ import argparse
 try:
     import redis
 except(ImportError):
-    sys.stderr.write('{0}: Dependencies are not met: Redis required for full functionality')
+    sys.stderr.write('{0}: Dependencies not met: Redis required for full functionality')
     sys.exit(5)
 
-# I still haven't fixed this? Jesus fuck man....
-packtdLogger = logging.getLogger('Pequod.chartd')  # Rename to chartdLogger Lol :P
-packtdLogger.setLevel(logging.INFO)
+chartdLogger = logging.getLogger('Pequod.chartd')
+chartdLogger.setLevel(logging.INFO)
 try:
     socket.SO_REUSEPORT
 except(AttributeError):
@@ -65,19 +64,19 @@ class Chartd(object):
     def loadConfiguration(self, configuration='conf/chartd.conf'):
         """Load a configuration file in to self.configuration"""
 
-        packtdLogger.debug('Attempting to load configuration file {0}'.format(configuration))
+        chartdLogger.debug('Attempting to load configuration file {0}'.format(configuration))
         if not os.path.isfile(configration):
-            packtdLogger.error('Could not find {0}: Does not exist'.format(configuration))
+            chartdLogger.error('Could not find {0}: Does not exist'.format(configuration))
             raise IOError('Configuration file \'{0}\' not found'.format(configuration))
 
         with open(configuration, 'r') as config:
             configContent = config.read()
             try:
                 configuration = json.loads(configContent)
-                packtdLogger.info('Succesfully loaded configuration file {0}'.format(configuration))
+                chartdLogger.info('Succesfully loaded configuration file {0}'.format(configuration))
             except():  # What is the exception it needs to catch?
                 configuration = {}
-                packtdLogger.error('Could not properly read configuration file {0}: JSON SyntaxError'.format(configuration))
+                chartdLogger.error('Could not properly read configuration file {0}: JSON SyntaxError'.format(configuration))
             finally:
                 self.configuration = configuration
 
@@ -86,7 +85,6 @@ class Chartd(object):
     def loadZoneFile(self, zoneFile='conf/chartd.zone'):
         """Load a JSON zone file in to memory"""
 
-        packtdLogger.debug('Attempting to load zone file {0}'.format(zoneFile))
         if self.useRedis:
             # Read a zone file in to Redis DB
             pass
@@ -99,10 +97,10 @@ class Chartd(object):
                 zoneContent = f.read()
                 try:
                     zoneRecords = json.loads(zoneContent)
-                    packtdLogger.info('Succesfully loaded configuratioin file {0}'.format(zoneFile))
+                    chartdLogger.info('Succesfully loaded configuratioin file {0}'.format(zoneFile))
                 except():
                     zoneRecords = {}
-                    packtdLogger.error('Could not properly read zone file {0}: JSON SyntaxError'.format(zoneFile))
+                    chartdLogger.error('Could not properly read zone file {0}: JSON SyntaxError'.format(zoneFile))
                 finally:
                     self.zoneRecords = zoneRecords
 
@@ -113,7 +111,7 @@ class Chartd(object):
 
         try:
             IPAddress = socket.gethostbyname(domain)
-            packtdLogger.info('Translated: {0} <-> [{1}]'.format(domain, IPAddress))
+            chartdLogger.info('Translated: {0} <-> [{1}]'.format(domain, IPAddress))
             if not self.useRedis:
                 self.zoneRecords[domain] = IPAddress
         except(socket.gaierror):
@@ -126,7 +124,7 @@ class Chartd(object):
 
         if domain[-1] != '.':
             domain = domain + '.'
-        packtdLogger.debug('Attempting to resolve domain {0} locally'.format(doamin))
+        chartdLogger.debug('Attempting to resolve domain {0} locally'.format(doamin))
 
         if useRedis:
             try:
@@ -136,33 +134,33 @@ class Chartd(object):
                 #ARecord = redisServer.hget('chartd.domains', domain)
                 #redisServer.close()
             except:
-                packtdLogger.warning('No connection with redis server [{0}]'.format(self.redisAddress))
+                chartdLogger.warning('No connection with redis server [{0}]'.format(self.redisAddress))
                 ARecord = self.defaultAddress
 
             if ARecord is not None:
-                packtdLogger.info('Translated: {0} <-> [{1}]'.format(domain, ARecord))
+                chartdLogger.info('Translated: {0} <-> [{1}]'.format(domain, ARecord))
                 return ARecord
             else:
-                packtdLogger.warning('Entry for domain {0} not found in database'.format(domain))
+                chartdLogger.warning('Entry for domain {0} not found in database'.format(domain))
                 return self.defaultAddress
 
         else:
             if domain in self.zoneRecords.keys():
-                packtdLogger.info('Host {0} found in local cache'.format())
+                chartdLogger.info('Host {0} found in local cache'.format())
                 return self.zoneRecords[domain]
             else:
-                packtdLogger.warning('Entry for domain {0} not found in cache'.format(domain))
+                chartdLogger.warning('Entry for domain {0} not found in cache'.format(domain))
                 return defaultAddress
 
     def mainloop(self):
         """Start chart.d daemon and bind to port"""
 
-        packtdLogger.info('Starting chart.d under PID: {0}'.format(os.getpid()))
+        chartdLogger.info('Starting chart.d under PID: {0}'.format(os.getpid()))
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as UDPSocket:
             try:
                 UDPSocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
             except(socket.error):  # Swallowing errors is fun :D
-                packtdLogger.error('SO_REUSEPORT not supported by this system')
+                chartdLogger.error('SO_REUSEPORT not supported by this system')
             UDPSocket.bind(('', 53))
 
             while True:
@@ -174,7 +172,7 @@ class Chartd(object):
                 if self.configuration['FORWARD_NOMATCH'] and IPAddress == self.defaultAddress:
                     IPAddress = remoteResolve(packet.domain)
                 UDPSocket.sendto(packet.buildReply(IPAddress), sourceAddress)
-                packtdLogger.info('DNS reply sent to {0}: {1}[{2}]'.format(sourceAddress[0], packet.domain, IPAddress)
+                chartdLogger.info('DNS reply sent to {0}: {1}[{2}]'.format(sourceAddress[0], packet.domain, IPAddress)
 
 
 class DNSQuery(object):
