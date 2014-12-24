@@ -35,7 +35,6 @@ import os.path
 import logging
 import argparse
 
-# I dont like the fact you require redis even if you don't use it :/
 try:
     import redis
 except(ImportError):
@@ -182,7 +181,7 @@ class Chartd(object):
                 if self.configuration['FORWARD_NOMATCH'] and IPAddress == self.defaultAddress:
                     IPAddress = remoteResolve(packet.domain)
                 UDPSocket.sendto(packet.buildReply(IPAddress), sourceAddress)
-                chartdLogger.info('DNS reply sent to {0}: {1}[{2}]'.format(sourceAddress[0], packet.domain, IPAddress)
+                chartdLogger.info('DNS reply sent to {0}: {1}[{2}]'.format(sourceAddress[0], packet.domain, IPAddress))
 
 
 class DNSQuery(object):
