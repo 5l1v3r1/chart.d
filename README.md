@@ -38,6 +38,7 @@ OR
 * Translate a DNS zone transfer in to a chart.d zonefile.
 * Start experimenting and planning with more complete DNS implementation.
 * Maybe IPv6 record support (AAAA).
+* Consider splitting up project in to seperate files when it gets bigger
 
 ###__Credits:__
 

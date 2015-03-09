@@ -64,7 +64,7 @@ class Chartd(object):
         """Load a configuration file in to self.configuration"""
 
         chartdLogger.debug('Attempting to load configuration file {0}'.format(configuration))
-        if not os.path.isfile(configration):
+        if not os.path.isfile(configuration):
             chartdLogger.error('Could not find {0}: Does not exist'.format(configuration))
             raise IOError('Configuration file \'{0}\' not found'.format(configuration))
 
@@ -133,9 +133,9 @@ class Chartd(object):
 
         if domain[-1] != '.':
             domain = domain + '.'
-        chartdLogger.debug('Attempting to resolve domain {0} locally'.format(doamin))
+        chartdLogger.debug('Attempting to resolve domain {0} locally'.format(domain))
 
-        if useRedis:
+        if self.useRedis:
             try:
                 pass
                 # Need to revisit with more Redis and python driver knowledge
@@ -155,33 +155,34 @@ class Chartd(object):
 
         else:
             if domain in self.zoneRecords.keys():
-                chartdLogger.info('Host {0} found in local cache'.format())
+                chartdLogger.info('Host {0} found in local cache'.format(domain))
                 return self.zoneRecords[domain]
             else:
                 chartdLogger.warning('Entry for domain {0} not found in cache'.format(domain))
-                return defaultAddress
+                return self.defaultAddress
 
     def mainloop(self):
         """Start chart.d daemon and bind to port"""
 
         chartdLogger.info('Starting chart.d under PID: {0}'.format(os.getpid()))
-        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as UDPSocket:
-            try:
-                UDPSocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
-            except(socket.error):  # Swallowing errors is fun :D
-                chartdLogger.error('SO_REUSEPORT not supported by this system')
-            UDPSocket.bind(('', 53))
+        global UDPSocket
+        UDPSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        try:
+            UDPSocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+        except(socket.error):  # Swallowing errors is fun :D
+            chartdLogger.error('SO_REUSEPORT not supported by this system')
+        UDPSocket.bind(('', 53))
 
-            while True:
-                IPAddress = ''
-                data, sourceAddress = UDPSocket.recvfrom(1024)
-                packet = DNSQuery(data)
-                IPAddress = localResolve(packet.domain)
+        while True:
+            IPAddress = ''
+            data, sourceAddress = UDPSocket.recvfrom(1024)
+            packet = DNSQuery(data)
+            IPAddress = self.localResolve(packet.domain)
                 # If our localResolve failed and fell back to our default address
-                if self.configuration['FORWARD_NOMATCH'] and IPAddress == self.defaultAddress:
-                    IPAddress = remoteResolve(packet.domain)
-                UDPSocket.sendto(packet.buildReply(IPAddress), sourceAddress)
-                chartdLogger.info('DNS reply sent to {0}: {1}[{2}]'.format(sourceAddress[0], packet.domain, IPAddress))
+            if self.configuration['FORWARD_NOMATCH'] and IPAddress == self.defaultAddress:
+                IPAddress = self.remoteResolve(packet.domain)
+            UDPSocket.sendto(packet.buildReply(IPAddress), sourceAddress)
+            chartdLogger.info('DNS reply sent to {0}: {1}[{2}]'.format(sourceAddress[0], packet.domain, IPAddress))
 
 
 class DNSQuery(object):
@@ -220,6 +221,7 @@ class DNSQuery(object):
 
 
 def main():
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--config', metavar='FILE', action='store', help='Specify the configuration file to use')
     parser.add_argument('-z', '--zonefile', metavar='FILE', action='store', help='Specify the zone file to use')
@@ -227,12 +229,16 @@ def main():
     parser.add_argument('-n', '--noredis', action='store_true', default=True, help='Don\'t use Redis for zone file entries')
     parser.add_argument('-r', '--resolve', action='store_true', default=False, help='Attempt to resolve domain name over network if not found in local cache')
     args = parser.parse_args()
+    """
 
-    print('Run me again I dare you, I double dare you muthafucka!')
-    sys.exit(127)
+    named = Chartd()
+    named.loadConfiguration()
+    named.loadZoneFile()
+    named.mainloop()
+
 
 if __name__ == '__main__':
     try:
         main()
     except(KeyboardInterrupt):
-        print()
+        UDPSocket.close()
